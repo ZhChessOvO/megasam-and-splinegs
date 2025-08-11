@@ -1,0 +1,12 @@
+[submodule "submodules/simple-knn"]
+	path = submodules/simple-knn
+	url = https://gitlab.inria.fr/bkerbl/simple-knn.git
+[submodule "submodules/co-tracker"]
+	path = submodules/co-tracker
+	url = https://github.com/facebookresearch/co-tracker.git
+[submodule "submodules/UniDepth"]
+	path = submodules/UniDepth
+	url = https://github.com/lpiccinelli-eth/UniDepth.git
+[submodule "submodules/mega-sam"]
+	path = submodules/mega-sam
+	url = https://github.com/mega-sam/mega-sam.git
