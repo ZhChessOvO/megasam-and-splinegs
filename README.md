@@ -13,7 +13,7 @@
 
 3.运行[splineGS](https://github.com/KAIST-VICLab/SplineGS)的初始化，然后使用2中得到的结果进行替换：
 
-（1）将megasam的depthanything训练集结果复制到splineGS对应的depth-anything文件夹下（如/share/czh/nvidia_rodynrf/Balloon1/depth_anything）。删除掉训练集的depth-anything结果。
+（1）将megasam的depthanything训练集结果复制到splineGS对应的depth-anything文件夹下（如/share/czh/nvidia_rodynrf/Balloon1/depth_anything）。删除掉测试集的depth-anything结果。
 
 （2）转换megasam输出的unidepth的格式：先删掉splineGS对应的unidepth文件夹下内容；然后修改test/convert_unidepth.py 开头的IN_ROOT和OUT_ROOT，运行。删除掉测试集的unidepth结果。
 
