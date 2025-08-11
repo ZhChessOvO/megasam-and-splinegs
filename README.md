@@ -17,7 +17,7 @@
 
 （2）转换megasam输出的unidepth的格式：先删掉splineGS对应的unidepth文件夹下内容；然后修改test/convert_unidepth.py 开头的IN_ROOT和OUT_ROOT，运行。删除掉测试集的unidepth结果。
 
-（3）替换相机位姿：在train.py的line 1181，将npz_path修改为你使用megasam得到的npz路径。
+（3）替换相机位姿：在train.py的line 1181，将npz_path修改为你使用megasam得到的npz路径。line1186-1187，根据数据集大小替换数字。
 
 4.按照splineGS的步骤进行训练与测试，例如：
 
