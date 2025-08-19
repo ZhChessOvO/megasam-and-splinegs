@@ -14,3 +14,4 @@ extensions
 lab4d
 preprocess
 submodules/*
+test/render_results/*
