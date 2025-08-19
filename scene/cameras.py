@@ -15,6 +15,9 @@ import torch
 from torch import nn
 from utils.graphics_utils import focal2fov, getProjectionMatrix, getWorld2View2, getWorld2View2_torch
 
+import os
+from PIL import Image  # 需导入PIL库
+
 
 class Camera(nn.Module):
     def __init__(
@@ -91,7 +94,42 @@ class Camera(nn.Module):
         self.sem_mask = torch.Tensor(sem_mask).to(self.data_device) if sem_mask is not None else None
         self.instance_mask = torch.Tensor(instance_mask).to(self.data_device) if instance_mask is not None else None
         self.tracklet = torch.Tensor(tracklet).to(self.data_device) if tracklet is not None else None
-        self.mask = torch.Tensor(mask).permute(2, 0, 1).to(self.data_device) if mask is not None else None
+        # self.mask = torch.Tensor(mask).permute(2, 0, 1).to(self.data_device) if mask is not None else None
+
+        if mask is not None:
+            # 转换为Tensor
+            mask_tensor = torch.Tensor(mask)
+
+            # print("mask_tensor:", mask_tensor.shape)
+            
+            # 检查维度，如果是4维(RGB带批次)，取单通道并降维
+            if mask_tensor.dim() == 4:
+                print("[DEBUG] mask dim = 4")
+                # 取蓝色通道
+                mask_tensor = mask_tensor[2, :, :, :]  # 提取B通道
+                # 应用阈值，蓝色区域转为白色(1.0)，黑色保持0.0
+                mask_tensor = (mask_tensor > 10).float()  # 阈值可根据实际调整
+                # print("mask_tensor:", mask_tensor.shape)
+            
+            self.mask = mask_tensor.permute(0, 2, 1).to(self.data_device)
+            # 保存处理后的掩码为PNG（只保存第一张用于验证）
+            # if not hasattr(self, 'mask_saved'):  # 确保只保存一次，避免重复写入
+            #     # 将张量转换为可保存的图像格式
+            #     mask_np = self.mask.squeeze().cpu().numpy()  # 移除通道维度，转为numpy
+            #     mask_np = (mask_np * 255).astype(np.uint8)  # 从[0,1]转为[0,255]
+                
+            #     # 创建保存目录（如果不存在）
+            #     save_dir = "./debug_masks"
+            #     os.makedirs(save_dir, exist_ok=True)
+            #     save_path = os.path.join(save_dir, "processed_mask.png")
+                
+            #     # 保存为PNG
+            #     Image.fromarray(mask_np).save(save_path)
+            #     print(f"[DEBUG] 处理后的掩码已保存至: {save_path}")
+            #     self.mask_saved = True  # 标记已保存，避免重复
+        else:
+            self.mask = None
+
         self.fwd_flow = torch.Tensor(fwd_flow).permute(2, 0, 1).to(self.data_device) if fwd_flow is not None else None
         self.bwd_flow = torch.Tensor(bwd_flow).permute(2, 0, 1).to(self.data_device) if bwd_flow is not None else None
         self.fwd_flow_mask = (

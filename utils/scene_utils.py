@@ -187,8 +187,29 @@ def render_training_image(
 
             decomp_image_np = np.concatenate((gt_normal_np, pred_normal_np, gt_depth_np, depth_np), axis=1)
 
-            mask_np = viewpoint.mask.permute(1, 2, 0).cpu().numpy()
+            # 新增打印语句，检查原始掩码形状
+            # print("viewpoint.mask shape:", viewpoint.mask.shape)
+            
+            mask_np = viewpoint.mask.permute(0, 2, 1).cpu().numpy()
+
+            # print("mask_np after permute:", mask_np.shape)  # 检查permute后的形状
+
+            # if mask_np.shape[-1] > 10:
+            #     mask_np = mask_np.transpose(0, 2, 1)  # 转为 [H, W, C]，即 (512, 512, 1)
+
+            # print("mask_np after transpose:", mask_np.shape)  # 检查permute后的形状
+
             mask_np = np.repeat(mask_np, 3, axis=2)
+
+            # print("mask_np after repeat:", mask_np.shape)  # 检查扩展通道后的形状
+
+            # print("gt_np shape:", gt_np.shape)
+            # print("image_np shape:", image_np.shape)
+            # print("mask_np shape:", mask_np.shape)
+            # print("d_alpha_np shape:", d_alpha_np.shape)
+            # print("d_image_np shape:", d_image_np.shape)
+            # print("s_image_np shape:", s_image_np.shape)
+
             image_np = np.concatenate((gt_np, image_np, mask_np, d_alpha_np, d_image_np, s_image_np), axis=1)
         else:
             decomp_image_np = np.concatenate((pred_normal_np, depth_np), axis=1)

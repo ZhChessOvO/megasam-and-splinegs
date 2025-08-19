@@ -444,31 +444,6 @@ def scene_reconstruction(
             image_tensor = torch.cat(images, 0)
             depth_tensor = torch.cat(depth_list, 0)
             motion_mask_tensor = torch.cat(motion_masks, 0)
-
-            # 添加维度交换操作
-            if motion_mask_tensor.shape[1] > 50:
-                motion_mask_tensor = motion_mask_tensor.permute(0, 2, 1, 3).contiguous()
-
-            # # 可视化motion_mask_tensor（添加的代码）
-            # import matplotlib.pyplot as plt
-            # import os
-            # # 创建保存可视化结果的目录
-            # vis_dir = "test/motion_mask_vis"
-            # os.makedirs(vis_dir, exist_ok=True)
-
-            # # 取第一个batch、第一个通道的掩码进行可视化（shape为[2, 1, 512, 512]）
-            # # 选择第0个batch和第0个通道，取后两维(512x512)
-            # mask_vis = motion_mask_tensor[0, 0, ...].cpu().detach().numpy()  # 转换为numpy数组
-
-            # # 归一化到0-255范围（如果需要）
-            # mask_vis = (mask_vis - mask_vis.min()) / (mask_vis.max() - mask_vis.min() + 1e-8) * 255
-            # mask_vis = mask_vis.astype(np.uint8)
-
-            # # 保存图像
-            # save_path = os.path.join(vis_dir, f"motion_mask_iter_{iteration}.png")
-            # plt.imsave(save_path, mask_vis, cmap="gray")
-            # print(f"Motion mask saved to {save_path}")
-
             if stage == "fine":
                 d_alpha_tensor = torch.cat(d_alphas, 0)
             s_image_tensor = torch.cat(s_images, 0)
@@ -497,10 +472,6 @@ def scene_reconstruction(
                 photo_loss = Ll1 + opt.lambda_dssim * (1.0 - ssim_loss)
                 photo_loss.backward(retain_graph=True)
             else:
-                # print("[DEBUG] image tensor:",image_tensor.shape)
-                # print("[DEBUG] motion mask tensor:",motion_mask_tensor.shape)
-                # 这里没有修改 改动在line449
-
                 Ll1 = l1_loss(image_tensor * (1-motion_mask_tensor), gt_image_tensor[:, :3, :, :] * (1-motion_mask_tensor))
                 psnr_ = psnr(image_tensor * (1-motion_mask_tensor), gt_image_tensor * (1-motion_mask_tensor)).detach().mean().double()
 
@@ -1059,7 +1030,7 @@ def scene_reconstruction(
             dyn_tracklet = torch.gather(
                 tracklet[None].expand(dyn_coord_2d.shape[0], -1, -1, -1),
                 2,
-                dyn_tracklet_index[:, None, None, None].expand(-1, 12, -1, 2),  # 这里进行了修改
+                dyn_tracklet_index[:, None, None, None].expand(-1, 12, -1, 2),
             ).squeeze(
                 2
             )  # N_dyn_pts, N_time, 2
@@ -1149,11 +1120,7 @@ def scene_reconstruction(
                         total_mask_all_t = projected_mask > 0
                     else:
                         total_mask_all_t = total_mask_all_t & (projected_mask > 0)
-                    # print("[DEBUG] total_mask_all_t", total_mask_all_t.shape)
 
-            # print("[DEBUG] dyn_tracjectory", dyn_tracjectory.shape)
-            # print("[DEBUG] total_mask_all_t", total_mask_all_t.shape)
-            
             new_dyn_tracjectory = dyn_tracjectory[total_mask_all_t]
             new_dyn_color = dyn_color[total_mask_all_t.cpu().numpy()]
             new_dyn_point = dyn_point[total_mask_all_t.cpu().numpy()]
@@ -1211,13 +1178,13 @@ def training(
     # 此处开始加入相机替换代码
 
     # 1. 加载npz文件中的相机位姿（cam_c2w: 相机到世界的变换矩阵）
-    npz_path = "/home/czh/code/mega-sam/outputs_cvd/ski_sgd_cvd_hr.npz"
+    npz_path = "/home/czh/code/mega-sam/outputs_cvd/Truck_sgd_cvd_hr.npz"
     with np.load(npz_path) as data:
         cam_c2w_all = data["cam_c2w"]  # 形状：(24, 4, 4)
     
     # 2. 分割训练集（前12张）和测试集（后12张）位姿
-    cam_c2w_train = cam_c2w_all[:32][:12]  # 训练集位姿（相机到世界）
-    cam_c2w_test = cam_c2w_all[32:][:12]   # 测试集位姿（相机到世界）
+    cam_c2w_train = cam_c2w_all[:12]  # 训练集位姿（相机到世界）
+    cam_c2w_test = cam_c2w_all[12:]   # 测试集位姿（相机到世界）
 
     # 3. 替换训练相机的位姿（scene.getTrainCameras()）
     train_cams = scene.getTrainCameras()

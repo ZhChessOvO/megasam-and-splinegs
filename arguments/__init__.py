@@ -52,7 +52,7 @@ class ModelParams(ParamGroup):
         self.sh_degree = 3
         self.deform_spatial_scale = 1e-2
         self.rgbfuntion = "sandwich"
-        self.control_num = 12
+        self.control_num = 12  # 这里修改过
         self.prune_error_threshold = 1.0
         
         self._source_path = ""

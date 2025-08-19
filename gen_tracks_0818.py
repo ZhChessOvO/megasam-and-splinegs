@@ -1,4 +1,3 @@
-
 """ Code borrowed from 
 https://github.com/vye16/shape-of-motion/blob/main/preproc/compute_tracks_torch.py
 """
@@ -28,7 +27,8 @@ def read_video(folder_path):
 
 def read_mask(folder_path):
     frame_paths = sorted(glob.glob(os.path.join(folder_path, "*")))
-    video = np.concatenate([np.array(Image.open(frame_path))[None, None] for frame_path in frame_paths], axis=1)
+    # 读取RGB掩码并转换为合适的格式
+    video = np.concatenate([np.array(Image.open(frame_path)).transpose(2, 0, 1)[None, None] for frame_path in frame_paths], axis=1)
     video = torch.from_numpy(video).float()
     return video
 
@@ -49,6 +49,13 @@ def main():
         "--backward_tracking",
         action="store_true",
         help="Compute tracks in both directions, not only forward",
+    )
+    # 添加掩码阈值参数
+    parser.add_argument(
+        "--mask_threshold",
+        type=int,
+        default=50,
+        help="Threshold for blue channel in mask (default: 50)"
     )
     args = parser.parse_args()
 
@@ -90,11 +97,20 @@ def main():
     
     masks = read_mask(mask_dir).to(DEFAULT_DEVICE)
     
-    masks[masks>0] = 1.
-    if args.is_static:
-        masks = 1.0 - masks
+    # 处理RGB掩码：提取蓝色通道并转换为二值掩码
+    # 提取蓝色通道 (RGB中的第三个通道)
+    masks = masks[:, :, 2, :, :]  # 现在是单通道
     
-    _, num_frames,_, height, width = video.shape
+    # 应用阈值：蓝色区域变为1.0，黑色区域变为0.0
+    masks = (masks > args.mask_threshold).float()
+
+    # print("mask:",masks.shape)
+    # print("video:",video.shape)
+    
+    if args.is_static:
+        masks = 1.0 - masks  # 如果是静态掩码，反转有效区域
+    
+    _, num_frames, height, width = masks.shape  # 更新掩码形状信息
     vis = Visualizer(save_dir=os.path.join(out_dir, "vis"), pad_value=120, linewidth=3)
 
     for t in tqdm(range(num_frames), desc="query frames"):
@@ -105,6 +121,20 @@ def main():
             continue
 
         current_mask = masks[:,t].unsqueeze(1)
+
+        # print("current mask:", current_mask.shape)
+        # print("video:", video.shape)
+
+        # 获取当前帧的掩码并调整维度
+        # current_mask = masks[:, t].unsqueeze(1).unsqueeze(1)  # 调整为符合模型要求的维度
+        
+        # # 确保掩码与视频尺寸匹配
+        # current_mask = torch.nn.functional.interpolate(
+        #     current_mask,
+        #     size=(video.shape[-2], video.shape[-1]),  # 匹配视频的高和宽
+        #     mode="nearest"
+        # )
+        
         start_pred = None
         
         for j in range(num_frames):
